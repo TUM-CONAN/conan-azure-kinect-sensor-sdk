@@ -1,0 +1,10 @@
+--- a/tools/k4aviewer/k4amicrophonelistener.cpp
++++ b/tools/k4aviewer/k4amicrophonelistener.cpp
+@@ -9,6 +9,7 @@
+ // System headers
+ //
+ #include <regex>
++#include <cstring>
+
+ // Library headers
+ //

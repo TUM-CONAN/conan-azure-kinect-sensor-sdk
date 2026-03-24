@@ -11,7 +11,7 @@ import glob
 
 class KinectAzureSensorSDKConan(ConanFile):
     name = "kinect-azure-sensor-sdk"
-    package_revision = "-r3"
+    package_revision = "-r4"
     upstream_version = "1.4.1"
     version = "{0}{1}".format(upstream_version, package_revision)
     settings = "os", "compiler", "arch", "build_type"
@@ -114,12 +114,23 @@ class KinectAzureSensorSDKConan(ConanFile):
                        "strip": 0},
                       {"base_path": os.path.join(self.source_folder, "extern", "libebml", "src"),
                        "patch_file": os.path.join(self.recipe_folder, "patches", "fix_gcc11_compatibility_ebml.diff"),
-                       "strip": 0}, ]:
+                       "strip": 0},
+                      ]:
                 patch(self, **p)
 
             replace_in_file(self, os.path.join(self.source_folder, "examples", "viewer", "opengl", "k4adepthpixelcolorizer.h"),
                             """#include <algorithm>""",
                             """#include <algorithm>\n#include <limits>""")
+
+            # gcc12: memset needs explicit <cstring> include (no longer transitively available)
+            replace_in_file(self, os.path.join(self.source_folder, "tools", "k4aviewer", "k4amicrophonelistener.cpp"),
+                            """#include <regex>""",
+                            """#include <regex>\n#include <cstring>""")
+
+            # gcc13+: -Woverloaded-virtual is stricter, bundled libebml triggers it
+            replace_in_file(self, os.path.join(self.source_folder, "cmake", "k4aCompilerFlags.cmake"),
+                            """    set(GNU_WARNINGS_AS_ERRORS "-Werror")""",
+                            """    set(GNU_WARNINGS_AS_ERRORS "-Werror" "-Wno-error=overloaded-virtual")""")
 
         # fix  build for vs2019
         replace_in_file(self,
