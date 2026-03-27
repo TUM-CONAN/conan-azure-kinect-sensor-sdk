@@ -11,7 +11,7 @@ import glob
 
 class KinectAzureSensorSDKConan(ConanFile):
     name = "kinect-azure-sensor-sdk"
-    package_revision = "-r4"
+    package_revision = "-r5"
     upstream_version = "1.4.1"
     version = "{0}{1}".format(upstream_version, package_revision)
     settings = "os", "compiler", "arch", "build_type"
@@ -127,10 +127,12 @@ class KinectAzureSensorSDKConan(ConanFile):
                             """#include <regex>""",
                             """#include <regex>\n#include <cstring>""")
 
-            # gcc13+: -Woverloaded-virtual is stricter, bundled libebml triggers it
+            # gcc12+: suppress warnings-as-errors for bundled code incompatibilities
+            # - overloaded-virtual: libebml virtual operator hiding (gcc13+)
+            # - deprecated-declarations: OpenSSL 1.x API used with OpenSSL 3.x headers
             replace_in_file(self, os.path.join(self.source_folder, "cmake", "k4aCompilerFlags.cmake"),
                             """    set(GNU_WARNINGS_AS_ERRORS "-Werror")""",
-                            """    set(GNU_WARNINGS_AS_ERRORS "-Werror" "-Wno-error=overloaded-virtual")""")
+                            """    set(GNU_WARNINGS_AS_ERRORS "-Werror" "-Wno-error=overloaded-virtual" "-Wno-error=deprecated-declarations")""")
 
         # fix  build for vs2019
         replace_in_file(self,
