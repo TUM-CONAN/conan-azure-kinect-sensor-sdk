@@ -11,7 +11,7 @@ import glob
 
 class KinectAzureSensorSDKConan(ConanFile):
     name = "kinect-azure-sensor-sdk"
-    package_revision = "-r5"
+    package_revision = "-r6"
     upstream_version = "1.4.1"
     version = "{0}{1}".format(upstream_version, package_revision)
     settings = "os", "compiler", "arch", "build_type"
@@ -130,9 +130,11 @@ class KinectAzureSensorSDKConan(ConanFile):
             # gcc12+: suppress warnings-as-errors for bundled code incompatibilities
             # - overloaded-virtual: libebml virtual operator hiding (gcc13+)
             # - deprecated-declarations: OpenSSL 1.x API used with OpenSSL 3.x headers
-            replace_in_file(self, os.path.join(self.source_folder, "cmake", "k4aCompilerFlags.cmake"),
-                            """    set(GNU_WARNINGS_AS_ERRORS "-Werror")""",
-                            """    set(GNU_WARNINGS_AS_ERRORS "-Werror" "-Wno-error=overloaded-virtual" "-Wno-error=deprecated-declarations")""")
+            # Disable -Werror for GCC: bundled code has warnings with modern gcc/openssl
+            k4a_flags = os.path.join(self.source_folder, "cmake", "k4aCompilerFlags.cmake")
+            replace_in_file(self, k4a_flags,
+                            'add_compile_options(${GNU_WARNINGS_AS_ERRORS})',
+                            '# add_compile_options(${GNU_WARNINGS_AS_ERRORS})  # disabled: bundled code incompatible with modern gcc/openssl')
 
         # fix  build for vs2019
         replace_in_file(self,
