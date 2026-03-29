@@ -11,7 +11,7 @@ import glob
 
 class KinectAzureSensorSDKConan(ConanFile):
     name = "kinect-azure-sensor-sdk"
-    package_revision = "-r6"
+    package_revision = "-r7"
     upstream_version = "1.4.1"
     version = "{0}{1}".format(upstream_version, package_revision)
     settings = "os", "compiler", "arch", "build_type"
@@ -133,8 +133,8 @@ class KinectAzureSensorSDKConan(ConanFile):
             # Disable -Werror for GCC: bundled code has warnings with modern gcc/openssl
             k4a_flags = os.path.join(self.source_folder, "cmake", "k4aCompilerFlags.cmake")
             replace_in_file(self, k4a_flags,
-                            'add_compile_options(${GNU_WARNINGS_AS_ERRORS})',
-                            '# add_compile_options(${GNU_WARNINGS_AS_ERRORS})  # disabled: bundled code incompatible with modern gcc/openssl')
+                            '    add_compile_options(${GNU_WARNINGS_AS_ERRORS})',
+                            '    # add_compile_options(${GNU_WARNINGS_AS_ERRORS})  # disabled: bundled code incompatible with modern gcc/openssl')
 
         # fix  build for vs2019
         replace_in_file(self,
