@@ -11,7 +11,7 @@ import glob
 
 class KinectAzureSensorSDKConan(ConanFile):
     name = "kinect-azure-sensor-sdk"
-    package_revision = "-r7"
+    package_revision = "-r8"
     upstream_version = "1.4.1"
     version = "{0}{1}".format(upstream_version, package_revision)
     settings = "os", "compiler", "arch", "build_type"
@@ -127,14 +127,20 @@ class KinectAzureSensorSDKConan(ConanFile):
                             """#include <regex>""",
                             """#include <regex>\n#include <cstring>""")
 
-            # gcc12+: suppress warnings-as-errors for bundled code incompatibilities
-            # - overloaded-virtual: libebml virtual operator hiding (gcc13+)
-            # - deprecated-declarations: OpenSSL 1.x API used with OpenSSL 3.x headers
-            # Disable -Werror for GCC: bundled code has warnings with modern gcc/openssl
-            k4a_flags = os.path.join(self.source_folder, "cmake", "k4aCompilerFlags.cmake")
-            replace_in_file(self, k4a_flags,
+            # Disable -Werror globally: bundled code (libebml, azure_c_shared) has
+            # warnings with modern gcc (overloaded-virtual) and OpenSSL 3.x (deprecated APIs)
+            # k4aCompilerFlags.cmake
+            replace_in_file(self, os.path.join(self.source_folder, "cmake", "k4aCompilerFlags.cmake"),
                             '    add_compile_options(${GNU_WARNINGS_AS_ERRORS})',
-                            '    # add_compile_options(${GNU_WARNINGS_AS_ERRORS})  # disabled: bundled code incompatible with modern gcc/openssl')
+                            '    # add_compile_options(${GNU_WARNINGS_AS_ERRORS})  # disabled for modern gcc/openssl')
+            # azure_c_shared build rules
+            azure_build_rules = os.path.join(self.source_folder, "extern", "azure_c_shared", "src", "configs", "azure_iot_build_rules.cmake")
+            replace_in_file(self, azure_build_rules,
+                            '    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")',
+                            '    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")  # disabled for modern gcc/openssl')
+            replace_in_file(self, azure_build_rules,
+                            '    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")',
+                            '    # set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror")  # disabled for modern gcc/openssl')
 
         # fix  build for vs2019
         replace_in_file(self,
