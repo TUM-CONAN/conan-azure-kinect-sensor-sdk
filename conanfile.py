@@ -127,6 +127,12 @@ class KinectAzureSensorSDKConan(ConanFile):
                             """#include <regex>""",
                             """#include <regex>\n#include <cstring>""")
 
+            # libstdc++ 13+: std::string is no longer pulled in transitively by <array>
+            for header in ["k4aaudiochanneldatagraph.h", "k4aaudiowindow.h"]:
+                replace_in_file(self, os.path.join(self.source_folder, "tools", "k4aviewer", header),
+                                """#include <array>""",
+                                """#include <array>\n#include <string>""")
+
             # gcc13+: -Woverloaded-virtual is stricter, bundled libebml triggers it
             replace_in_file(self, os.path.join(self.source_folder, "cmake", "k4aCompilerFlags.cmake"),
                             """    set(GNU_WARNINGS_AS_ERRORS "-Werror")""",
