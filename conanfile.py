@@ -127,6 +127,27 @@ class KinectAzureSensorSDKConan(ConanFile):
                             """#include <regex>""",
                             """#include <regex>\n#include <cstring>""")
 
+            # libstdc++ 13+: <array> no longer pulls <string> in, and these three hold std::string members
+            for header in ["k4aaudiochanneldatagraph.h", "k4aaudiowindow.h", "perfcounter.h"]:
+                replace_in_file(self, os.path.join(self.source_folder, "tools", "k4aviewer", header),
+                                """#include <array>""",
+                                """#include <array>\n#include <string>""")
+
+            if str(self.settings.arch) == "armv8":
+                # No prebuilt arm package exists, so this is built from source. k4aviewer and the
+                # examples predate libstdc++ 13 (std::string members with only <array> included) and
+                # their vendored glfw sets CMP0042 to OLD, which CMake 4 refuses outright. Consumers
+                # use libk4a and libk4arecord, and nothing else in the tree uses glfw or imgui: leave
+                # the four subdirectories out. x86_64 builds exactly what it did before.
+                for directory in ["examples", "tools"]:
+                    replace_in_file(self, os.path.join(self.source_folder, "CMakeLists.txt"),
+                                    "add_subdirectory({0})".format(directory),
+                                    "# add_subdirectory({0}) -- armv8, see the recipe".format(directory))
+                for directory in ["glfw", "imgui"]:
+                    replace_in_file(self, os.path.join(self.source_folder, "extern", "CMakeLists.txt"),
+                                    "add_subdirectory({0})".format(directory),
+                                    "# add_subdirectory({0}) -- armv8, see the recipe".format(directory))
+
             # Disable -Werror globally: bundled code (libebml, azure_c_shared) has
             # warnings with modern gcc (overloaded-virtual) and OpenSSL 3.x (deprecated APIs)
             # k4aCompilerFlags.cmake
